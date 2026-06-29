@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Transmission Tower Grounding Risk Assessment</title>
+<style>
+body{font-family:Arial;margin:auto;max-width:1100px;padding:40px;color:#333}
+h1{color:#1a1a2e;border-bottom:3px solid #1a1a2e;padding-bottom:10px}
+h2{color:#1a1a2e;margin-top:30px}
+h3{color:#333;margin-top:20px}
+.meta{color:#666;font-size:13px;line-height:1.8;margin-bottom:20px}
+.info{background:#f0f8ff;border-left:4px solid #0078d4;padding:15px;margin:15px 0;border-radius:0 5px 5px 0}
+table{border-collapse:collapse;width:100%;margin:15px 0;font-size:13px}
+th{background:#1a1a2e;color:white;padding:10px;text-align:left}
+td{padding:8px 10px;border-bottom:1px solid #eee}
+tr:nth-child(even){background:#f9f9f9}
+.CRITICAL{color:#d83b01;font-weight:bold}
+.HIGH{color:#ff8c00;font-weight:bold}
+.MODERATE{color:#b8860b;font-weight:bold}
+.LOW{color:#107c10;font-weight:bold}
+.rec{padding:10px;margin:6px 0;border-radius:0 5px 5px 0;font-size:13px}
+.rec.CRITICAL{background:#fff4f0;border-left:4px solid #d83b01}
+.rec.HIGH{background:#fff8f0;border-left:4px solid #ff8c00}
+.rec.MODERATE{background:#fffbf0;border-left:4px solid #b8860b}
+.rec.LOW{background:#f0fff4;border-left:4px solid #107c10}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin:20px 0}
+.card{padding:15px;border-radius:8px;text-align:center;color:white}
+.card h3{margin:0;font-size:28px}
+.card p{margin:5px 0 0;font-size:13px}
+.footer{margin-top:40px;font-size:12px;color:#666;border-top:1px solid #ddd;padding-top:15px}
+</style>
+</head>
+<body>
+<h1>Transmission Tower Grounding Risk Assessment Report</h1>
+<div class="meta">
+<strong>Tool:</strong> Grounding Risk Assessment Tool v1.0<br>
+<strong>Research Basis:</strong> Electromagnetic Modelling Analysis of Soil Ionisation Effects on Transmission Line Tower Grounding Performance — Fatehah Burhannudin, UTM 2023<br>
+<strong>Tower Rating:</strong> 500 kV &nbsp;|&nbsp; <strong>Lightning Current:</strong> 16 kA &nbsp;|&nbsp; <strong>Key Frequency:</strong> 50 Hz<br>
+<strong>Generated:</strong> June 30, 2026 at 2026-06-30 03:37 &nbsp;|&nbsp; <strong>Prepared by:</strong> Fatehah Burhannudin
+</div>
+
+<div class="info">
+<strong>About This Tool:</strong> Estimates induced voltage at transmission line tower grounding systems under lightning surge conditions, accounting for soil ionisation effects. Results are interpolated from validated CDEGS electromagnetic simulation data from the author's FYP research. Soil ionisation is modelled by varying ground conductor radius as recommended by CIGRE and IEEE Working Groups.
+</div>
+
+<h2>FYP Research Benchmark Data — Horizontal Soil Model</h2>
+<table>
+<tr><th>Conductor Radius (m)</th><th>Induced Voltage (kV)</th><th>Voltage Reduction (%)</th><th>Soil Ionisation Effect</th></tr><tr><td>0.007</td><td>11.6</td><td>0.0%</td><td>Baseline (no ionisation)</td></tr><tr><td>0.0114</td><td>11.3</td><td>2.59%</td><td>2.59% reduction from ionisation</td></tr><tr><td>0.1212</td><td>10.6</td><td>8.62%</td><td>8.62% reduction from ionisation</td></tr><tr><td>0.2052</td><td>10.4</td><td>10.34%</td><td>10.34% reduction from ionisation</td></tr><tr><td>0.3032</td><td>10.2</td><td>12.07%</td><td>12.07% reduction from ionisation</td></tr><tr><td>0.4082</td><td>10.0</td><td>13.79%</td><td>13.79% reduction from ionisation</td></tr></table>
+<h2>FYP Research Benchmark Data — Uniform Soil Model</h2>
+<table>
+<tr><th>Conductor Radius (m)</th><th>Induced Voltage (kV)</th><th>Voltage Reduction (%)</th><th>Soil Ionisation Effect</th></tr><tr><td>0.007</td><td>11.3</td><td>0.0%</td><td>Baseline (no ionisation)</td></tr><tr><td>0.0114</td><td>11.1</td><td>3.57%</td><td>3.57% reduction from ionisation</td></tr><tr><td>0.1212</td><td>10.0</td><td>12.07%</td><td>12.07% reduction from ionisation</td></tr><tr><td>0.2052</td><td>9.7</td><td>14.66%</td><td>14.66% reduction from ionisation</td></tr><tr><td>0.3032</td><td>9.4</td><td>17.24%</td><td>17.24% reduction from ionisation</td></tr><tr><td>0.4082</td><td>9.3</td><td>19.83%</td><td>19.83% reduction from ionisation</td></tr></table>
+
+<h2>Risk Assessment Summary</h2>
+<div class="grid">
+<div class="card" style="background:#d83b01"><h3>0</h3><p>Critical</p></div>
+<div class="card" style="background:#ff8c00"><h3>7</h3><p>High</p></div>
+<div class="card" style="background:#b8860b"><h3>5</h3><p>Moderate</p></div>
+<div class="card" style="background:#107c10"><h3>0</h3><p>Low</p></div>
+</div>
+
+<h2>Detailed Assessment Results</h2>
+<table>
+<tr><th>Scenario</th><th>Radius (m)</th><th>Soil Model</th><th>Induced Voltage (kV)</th><th>Voltage Reduction</th><th>Risk Level</th></tr><tr>
+<td>Minimum (r=0.007m)</td><td>0.007</td><td>Horizontal</td>
+<td>11.6 kV</td><td>0.0% (0.0 kV)</td>
+<td class="HIGH">HIGH</td>
+</tr><tr>
+<td>Minimum (r=0.007m)</td><td>0.007</td><td>Uniform</td>
+<td>11.3 kV</td><td>0.0% (0.0 kV)</td>
+<td class="HIGH">HIGH</td>
+</tr><tr>
+<td>Small (r=0.0114m)</td><td>0.0114</td><td>Horizontal</td>
+<td>11.3 kV</td><td>2.59% (0.3 kV)</td>
+<td class="HIGH">HIGH</td>
+</tr><tr>
+<td>Small (r=0.0114m)</td><td>0.0114</td><td>Uniform</td>
+<td>11.1 kV</td><td>1.77% (0.2 kV)</td>
+<td class="HIGH">HIGH</td>
+</tr><tr>
+<td>Medium (r=0.1212m)</td><td>0.1212</td><td>Horizontal</td>
+<td>10.6 kV</td><td>8.62% (1.0 kV)</td>
+<td class="HIGH">HIGH</td>
+</tr><tr>
+<td>Medium (r=0.1212m)</td><td>0.1212</td><td>Uniform</td>
+<td>10.0 kV</td><td>11.5% (1.3 kV)</td>
+<td class="MODERATE">MODERATE</td>
+</tr><tr>
+<td>Large (r=0.2052m)</td><td>0.2052</td><td>Horizontal</td>
+<td>10.4 kV</td><td>10.34% (1.2 kV)</td>
+<td class="HIGH">HIGH</td>
+</tr><tr>
+<td>Large (r=0.2052m)</td><td>0.2052</td><td>Uniform</td>
+<td>9.7 kV</td><td>14.16% (1.6 kV)</td>
+<td class="MODERATE">MODERATE</td>
+</tr><tr>
+<td>Larger (r=0.3032m)</td><td>0.3032</td><td>Horizontal</td>
+<td>10.2 kV</td><td>12.07% (1.4 kV)</td>
+<td class="HIGH">HIGH</td>
+</tr><tr>
+<td>Larger (r=0.3032m)</td><td>0.3032</td><td>Uniform</td>
+<td>9.4 kV</td><td>16.81% (1.9 kV)</td>
+<td class="MODERATE">MODERATE</td>
+</tr><tr>
+<td>Maximum (r=0.4082m)</td><td>0.4082</td><td>Horizontal</td>
+<td>10.0 kV</td><td>13.79% (1.6 kV)</td>
+<td class="MODERATE">MODERATE</td>
+</tr><tr>
+<td>Maximum (r=0.4082m)</td><td>0.4082</td><td>Uniform</td>
+<td>9.3 kV</td><td>17.7% (2.0 kV)</td>
+<td class="MODERATE">MODERATE</td>
+</tr><h2>Engineering Recommendations</h2><h3>Minimum (r=0.007m) | Horizontal Soil | <span class='HIGH'>HIGH</span></h3><div class="rec HIGH">Increase ground conductor radius to improve lightning surge performance.</div><div class="rec HIGH">Conduct soil resistivity measurement to validate soil model assumptions.</div><div class="rec HIGH">Horizontal soil model accounts for depth-varying properties — recommended for layered soil conditions.</div><h3>Minimum (r=0.007m) | Uniform Soil | <span class='HIGH'>HIGH</span></h3><div class="rec HIGH">Increase ground conductor radius to improve lightning surge performance.</div><div class="rec HIGH">Conduct soil resistivity measurement to validate soil model assumptions.</div><div class="rec HIGH">Note: Uniform soil model may oversimplify ionisation effects. Consider horizontal model for layered soils.</div><h3>Small (r=0.0114m) | Horizontal Soil | <span class='HIGH'>HIGH</span></h3><div class="rec HIGH">Increase ground conductor radius to improve lightning surge performance.</div><div class="rec HIGH">Conduct soil resistivity measurement to validate soil model assumptions.</div><div class="rec HIGH">Horizontal soil model accounts for depth-varying properties — recommended for layered soil conditions.</div><h3>Small (r=0.0114m) | Uniform Soil | <span class='HIGH'>HIGH</span></h3><div class="rec HIGH">Increase ground conductor radius to improve lightning surge performance.</div><div class="rec HIGH">Conduct soil resistivity measurement to validate soil model assumptions.</div><div class="rec HIGH">Note: Uniform soil model may oversimplify ionisation effects. Consider horizontal model for layered soils.</div><h3>Medium (r=0.1212m) | Horizontal Soil | <span class='HIGH'>HIGH</span></h3><div class="rec HIGH">Increase ground conductor radius to improve lightning surge performance.</div><div class="rec HIGH">Conduct soil resistivity measurement to validate soil model assumptions.</div><div class="rec HIGH">Horizontal soil model accounts for depth-varying properties — recommended for layered soil conditions.</div><h3>Medium (r=0.1212m) | Uniform Soil | <span class='MODERATE'>MODERATE</span></h3><div class="rec MODERATE">System within acceptable range. Monitor conductor condition regularly.</div><div class="rec MODERATE">Consider radius increase if soil conditions change significantly.</div><div class="rec MODERATE">Note: Uniform soil model may oversimplify ionisation effects. Consider horizontal model for layered soils.</div><h3>Large (r=0.2052m) | Horizontal Soil | <span class='HIGH'>HIGH</span></h3><div class="rec HIGH">Increase ground conductor radius to improve lightning surge performance.</div><div class="rec HIGH">Conduct soil resistivity measurement to validate soil model assumptions.</div><div class="rec HIGH">Horizontal soil model accounts for depth-varying properties — recommended for layered soil conditions.</div><h3>Large (r=0.2052m) | Uniform Soil | <span class='MODERATE'>MODERATE</span></h3><div class="rec MODERATE">System within acceptable range. Monitor conductor condition regularly.</div><div class="rec MODERATE">Consider radius increase if soil conditions change significantly.</div><div class="rec MODERATE">Note: Uniform soil model may oversimplify ionisation effects. Consider horizontal model for layered soils.</div><h3>Larger (r=0.3032m) | Horizontal Soil | <span class='HIGH'>HIGH</span></h3><div class="rec HIGH">Increase ground conductor radius to improve lightning surge performance.</div><div class="rec HIGH">Conduct soil resistivity measurement to validate soil model assumptions.</div><div class="rec HIGH">Horizontal soil model accounts for depth-varying properties — recommended for layered soil conditions.</div><h3>Larger (r=0.3032m) | Uniform Soil | <span class='MODERATE'>MODERATE</span></h3><div class="rec MODERATE">System within acceptable range. Monitor conductor condition regularly.</div><div class="rec MODERATE">Consider radius increase if soil conditions change significantly.</div><div class="rec MODERATE">Note: Uniform soil model may oversimplify ionisation effects. Consider horizontal model for layered soils.</div><h3>Maximum (r=0.4082m) | Horizontal Soil | <span class='MODERATE'>MODERATE</span></h3><div class="rec MODERATE">System within acceptable range. Monitor conductor condition regularly.</div><div class="rec MODERATE">Consider radius increase if soil conditions change significantly.</div><div class="rec MODERATE">Horizontal soil model accounts for depth-varying properties — recommended for layered soil conditions.</div><h3>Maximum (r=0.4082m) | Uniform Soil | <span class='MODERATE'>MODERATE</span></h3><div class="rec MODERATE">System within acceptable range. Monitor conductor condition regularly.</div><div class="rec MODERATE">Consider radius increase if soil conditions change significantly.</div><div class="rec MODERATE">Note: Uniform soil model may oversimplify ionisation effects. Consider horizontal model for layered soils.</div>
+<h2>Key Research Findings</h2>
+<div class="info">
+<strong>Finding 1:</strong> Soil ionisation reduces induced voltage by 2.59% to 13.79% for horizontal soil conditions as conductor radius increases from 0.007m to 0.4082m.<br><br>
+<strong>Finding 2:</strong> Uniform soil shows higher reduction (3.57% to 19.83%) but oversimplifies ionisation — horizontal model is more accurate for real-world layered conditions.<br><br>
+<strong>Finding 3:</strong> Increasing ground conductor radius is an effective mitigation strategy — larger radius accounts for soil ionisation and reduces lightning surge voltage.<br><br>
+<strong>Finding 4:</strong> Validated against experimental data from benchmarking reference — both waveform shape and magnitude confirmed consistent with literature.
+</div>
+
+<h2>Standards & Methodology Reference</h2>
+<table>
+<tr><th>Tool / Standard</th><th>Application in This Research</th></tr>
+<tr><td>CDEGS HIFREQ-SESCAD Module</td><td>Electromagnetic field simulation for grounding system analysis</td></tr>
+<tr><td>FFTSES / IFFTSES Module</td><td>Fast Fourier Transform analysis of lightning impulse waveforms</td></tr>
+<tr><td>CIGRE Guidelines</td><td>Soil ionisation modelling methodology</td></tr>
+<tr><td>IEEE Working Group Recommendations</td><td>Electromagnetic approach for high-frequency grounding analysis</td></tr>
+<tr><td>IEEE 80-2013</td><td>Reference standard for AC substation grounding safety</td></tr>
+</table>
+
+<div class="footer">
+<p><strong>Fatehah Burhannudin</strong> | fatehahdean@gmail.com | linkedin.com/in/fatehahburhannudin</p>
+<p>This tool is based on validated CDEGS simulation data from the author's Final Year Project at Universiti Teknologi Malaysia (2023), supervised by Dr. Zuraimy Adzis.</p>
+<p>Generated: 2026-06-30 03:37</p>
+</div>
+</body></html>
