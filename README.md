@@ -95,6 +95,7 @@ Opens an HTML report with full risk assessment results, FYP benchmark data table
 - Engineering recommendations per scenario
 - Key research findings
 - Standards and methodology reference
+<img width="1470" height="956" alt="Screenshot 2026-07-01 at 1 20 55 AM" src="https://github.com/user-attachments/assets/686ed6b5-bcef-41ae-ba1e-f1e78ce5dfd7" />
 
 ---
 
