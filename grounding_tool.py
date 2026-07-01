@@ -1,5 +1,17 @@
-import math
+"""Transmission Tower Grounding Risk Assessment Tool.
+
+Estimates induced voltage at transmission line tower grounding systems under
+lightning surge conditions, accounting for soil ionisation effects. Voltage
+values are linearly interpolated from validated CDEGS electromagnetic
+simulation data (Fatehah Burhannudin, "Electromagnetic Modelling Analysis of
+Soil Ionisation Effects on Transmission Line Tower Grounding Performance",
+UTM 2023).
+"""
+
 from datetime import datetime
+from typing import Literal
+
+SoilModel = Literal["horizontal", "uniform"]
 
 FYP_HORIZONTAL_DATA = [
     {"radius": 0.0070, "voltage_kv": 11.6, "pct_diff": 0.0},
@@ -24,44 +36,69 @@ FYP_PARAMS = {
     "lightning_current_ka": 16,
     "key_frequency_hz": 50,
     "copper_resistivity": 1.67e-8,
-    "horizontal_soil_resistivity": 100,
-    "uniform_soil_resistivity": 100,
 }
 
-def estimate_voltage(radius_m, soil_model):
-    data = FYP_HORIZONTAL_DATA if soil_model == "horizontal" else FYP_UNIFORM_DATA
+SCENARIOS = [
+    {"radius": 0.0070, "label": "Minimum (r=0.007m)"},
+    {"radius": 0.0114, "label": "Small (r=0.0114m)"},
+    {"radius": 0.1212, "label": "Medium (r=0.1212m)"},
+    {"radius": 0.2052, "label": "Large (r=0.2052m)"},
+    {"radius": 0.3032, "label": "Larger (r=0.3032m)"},
+    {"radius": 0.4082, "label": "Maximum (r=0.4082m)"},
+]
+
+# Ordered highest-to-lowest; first threshold exceeded by the ratio wins.
+RISK_THRESHOLDS = (
+    (0.025, "CRITICAL", "#d83b01"),
+    (0.020, "HIGH", "#ff8c00"),
+    (0.018, "MODERATE", "#b8860b"),
+)
+DEFAULT_RISK = ("LOW", "#107c10")
+
+
+def _data_for_soil(soil_model: SoilModel) -> list[dict]:
+    return FYP_HORIZONTAL_DATA if soil_model == "horizontal" else FYP_UNIFORM_DATA
+
+
+def estimate_voltage(radius_m: float, soil_model: SoilModel) -> float:
+    """Linearly interpolate induced voltage (kV) for a given conductor radius.
+
+    Radii outside the validated range are clamped to the nearest endpoint.
+    """
+    data = _data_for_soil(soil_model)
     if radius_m <= data[0]["radius"]:
         return data[0]["voltage_kv"]
     if radius_m >= data[-1]["radius"]:
         return data[-1]["voltage_kv"]
-    for i in range(len(data) - 1):
-        r1, r2 = data[i]["radius"], data[i+1]["radius"]
-        v1, v2 = data[i]["voltage_kv"], data[i+1]["voltage_kv"]
+    for point, next_point in zip(data, data[1:]):
+        r1, r2 = point["radius"], next_point["radius"]
         if r1 <= radius_m <= r2:
             t = (radius_m - r1) / (r2 - r1)
+            v1, v2 = point["voltage_kv"], next_point["voltage_kv"]
             return round(v1 + t * (v2 - v1), 2)
     return data[-1]["voltage_kv"]
 
-def voltage_reduction(radius_m, soil_model):
-    data = FYP_HORIZONTAL_DATA if soil_model == "horizontal" else FYP_UNIFORM_DATA
-    base = data[0]["voltage_kv"]
+
+def voltage_reduction(radius_m: float, soil_model: SoilModel) -> tuple[float, float]:
+    """Return (reduction_kv, reduction_pct) relative to the baseline (smallest radius)."""
+    base = _data_for_soil(soil_model)[0]["voltage_kv"]
     estimated = estimate_voltage(radius_m, soil_model)
     red_kv = round(base - estimated, 2)
     red_pct = round((red_kv / base) * 100, 2)
     return red_kv, red_pct
 
-def assess_risk(voltage_kv, tower_kv):
-    ratio = voltage_kv / tower_kv
-    if ratio > 0.025:
-        return "CRITICAL", "#d83b01"
-    elif ratio > 0.020:
-        return "HIGH", "#ff8c00"
-    elif ratio > 0.018:
-        return "MODERATE", "#b8860b"
-    else:
-        return "LOW", "#107c10"
 
-def get_recommendations(risk, radius_m, soil_model):
+def assess_risk(voltage_kv: float, tower_kv: float) -> tuple[str, str]:
+    """Classify risk level and display colour from the induced-voltage-to-tower-rating ratio."""
+    ratio = voltage_kv / tower_kv
+    for threshold, level, color in RISK_THRESHOLDS:
+        if ratio > threshold:
+            return level, color
+    return DEFAULT_RISK
+
+
+def get_recommendations(risk: str, radius_m: float, soil_model: SoilModel) -> list[str]:
+    """Build engineering recommendations for a scenario's risk level and soil model."""
     recs = []
     if risk == "CRITICAL":
         recs.append("IMMEDIATE ACTION: Conductor radius critically small. Increase radius to reduce induced voltage.")
@@ -76,57 +113,85 @@ def get_recommendations(risk, radius_m, soil_model):
     else:
         recs.append("Grounding system performance is satisfactory for current conditions.")
         recs.append("Maintain regular preventive maintenance schedule.")
+
     if soil_model == "uniform":
         recs.append("Note: Uniform soil model may oversimplify ionisation effects. Consider horizontal model for layered soils.")
     else:
         recs.append("Horizontal soil model accounts for depth-varying properties — recommended for layered soil conditions.")
-    if radius_m > 0.4082:
+
+    if radius_m > FYP_HORIZONTAL_DATA[-1]["radius"]:
         recs.append("WARNING: Radius exceeds validated research range. Results are extrapolated.")
+
     return recs
 
-scenarios = [
-    {"radius": 0.007,  "label": "Minimum (r=0.007m)"},
-    {"radius": 0.0114, "label": "Small (r=0.0114m)"},
-    {"radius": 0.1212, "label": "Medium (r=0.1212m)"},
-    {"radius": 0.2052, "label": "Large (r=0.2052m)"},
-    {"radius": 0.3032, "label": "Larger (r=0.3032m)"},
-    {"radius": 0.4082, "label": "Maximum (r=0.4082m)"},
-]
 
-print("Transmission Tower Grounding Risk Assessment Tool")
-print("Based on FYP Research - Fatehah Burhannudin, UTM 2023")
-print("="*60)
+def run_assessment() -> list[dict]:
+    """Evaluate every scenario/soil-model combination and return the results."""
+    results = []
+    for scenario in SCENARIOS:
+        for soil in ("horizontal", "uniform"):
+            voltage = estimate_voltage(scenario["radius"], soil)
+            red_kv, red_pct = voltage_reduction(scenario["radius"], soil)
+            risk, color = assess_risk(voltage, FYP_PARAMS["tower_voltage_kv"])
+            results.append({
+                "label": scenario["label"],
+                "radius": scenario["radius"],
+                "soil": soil,
+                "voltage_kv": voltage,
+                "reduction_kv": red_kv,
+                "reduction_pct": red_pct,
+                "risk": risk,
+                "color": color,
+                "recommendations": get_recommendations(risk, scenario["radius"], soil),
+            })
+            print(f"{scenario['label']} | {soil.capitalize()} | Voltage: {voltage} kV | Reduction: {red_pct}% | Risk: {risk}")
+    return results
 
-results = []
-for s in scenarios:
-    for soil in ["horizontal", "uniform"]:
-        voltage = estimate_voltage(s["radius"], soil)
-        red_kv, red_pct = voltage_reduction(s["radius"], soil)
-        risk, color = assess_risk(voltage, FYP_PARAMS["tower_voltage_kv"])
-        recs = get_recommendations(risk, s["radius"], soil)
-        results.append({
-            "label": s["label"],
-            "radius": s["radius"],
-            "soil": soil,
-            "voltage_kv": voltage,
-            "reduction_kv": red_kv,
-            "reduction_pct": red_pct,
-            "risk": risk,
-            "color": color,
-            "recommendations": recs
-        })
-        print(f"{s['label']} | {soil.capitalize()} | Voltage: {voltage} kV | Reduction: {red_pct}% | Risk: {risk}")
 
-now = datetime.now()
-timestamp = now.strftime("%Y-%m-%d %H:%M")
-report_date = now.strftime("%B %d, %Y")
+def _benchmark_table_rows(data: list[dict]) -> str:
+    rows = ""
+    for d in data:
+        effect = "Baseline (no ionisation)" if d["pct_diff"] == 0 else f"{d['pct_diff']}% reduction from ionisation"
+        rows += f"<tr><td>{d['radius']}</td><td>{d['voltage_kv']}</td><td>{d['pct_diff']}%</td><td>{effect}</td></tr>"
+    return rows
 
-critical = sum(1 for r in results if r["risk"] == "CRITICAL")
-high = sum(1 for r in results if r["risk"] == "HIGH")
-moderate = sum(1 for r in results if r["risk"] == "MODERATE")
-low = sum(1 for r in results if r["risk"] == "LOW")
 
-html = f"""<!DOCTYPE html>
+def _results_table_rows(results: list[dict]) -> str:
+    rows = ""
+    for r in results:
+        rows += f"""<tr>
+<td>{r['label']}</td><td>{r['radius']}</td><td>{r['soil'].capitalize()}</td>
+<td>{r['voltage_kv']} kV</td><td>{r['reduction_pct']}% ({r['reduction_kv']} kV)</td>
+<td class="{r['risk']}">{r['risk']}</td>
+</tr>"""
+    return rows
+
+
+def _recommendations_section(results: list[dict]) -> str:
+    section = "<h2>Engineering Recommendations</h2>"
+    seen = set()
+    for r in results:
+        key = f"{r['label']}-{r['soil']}"
+        if key in seen:
+            continue
+        seen.add(key)
+        section += f"<h3>{r['label']} | {r['soil'].capitalize()} Soil | <span class='{r['risk']}'>{r['risk']}</span></h3>"
+        for rec in r["recommendations"]:
+            section += f'<div class="rec {r["risk"]}">{rec}</div>'
+    return section
+
+
+def build_report_html(results: list[dict], now: datetime) -> str:
+    """Render the full client-ready HTML report for a set of assessment results."""
+    timestamp = now.strftime("%Y-%m-%d %H:%M")
+    report_date = now.strftime("%B %d, %Y")
+
+    critical = sum(1 for r in results if r["risk"] == "CRITICAL")
+    high = sum(1 for r in results if r["risk"] == "HIGH")
+    moderate = sum(1 for r in results if r["risk"] == "MODERATE")
+    low = sum(1 for r in results if r["risk"] == "LOW")
+
+    return f"""<!DOCTYPE html>
 <html>
 <head>
 <title>Transmission Tower Grounding Risk Assessment</title>
@@ -172,22 +237,15 @@ tr:nth-child(even){{background:#f9f9f9}}
 
 <h2>FYP Research Benchmark Data — Horizontal Soil Model</h2>
 <table>
-<tr><th>Conductor Radius (m)</th><th>Induced Voltage (kV)</th><th>Voltage Reduction (%)</th><th>Soil Ionisation Effect</th></tr>"""
+<tr><th>Conductor Radius (m)</th><th>Induced Voltage (kV)</th><th>Voltage Reduction (%)</th><th>Soil Ionisation Effect</th></tr>
+{_benchmark_table_rows(FYP_HORIZONTAL_DATA)}
+</table>
 
-for d in FYP_HORIZONTAL_DATA:
-    effect = "Baseline (no ionisation)" if d["pct_diff"] == 0 else f"{d['pct_diff']}% reduction from ionisation"
-    html += f"<tr><td>{d['radius']}</td><td>{d['voltage_kv']}</td><td>{d['pct_diff']}%</td><td>{effect}</td></tr>"
-
-html += """</table>
 <h2>FYP Research Benchmark Data — Uniform Soil Model</h2>
 <table>
-<tr><th>Conductor Radius (m)</th><th>Induced Voltage (kV)</th><th>Voltage Reduction (%)</th><th>Soil Ionisation Effect</th></tr>"""
-
-for d in FYP_UNIFORM_DATA:
-    effect = "Baseline (no ionisation)" if d["pct_diff"] == 0 else f"{d['pct_diff']}% reduction from ionisation"
-    html += f"<tr><td>{d['radius']}</td><td>{d['voltage_kv']}</td><td>{d['pct_diff']}%</td><td>{effect}</td></tr>"
-
-html += f"""</table>
+<tr><th>Conductor Radius (m)</th><th>Induced Voltage (kV)</th><th>Voltage Reduction (%)</th><th>Soil Ionisation Effect</th></tr>
+{_benchmark_table_rows(FYP_UNIFORM_DATA)}
+</table>
 
 <h2>Risk Assessment Summary</h2>
 <div class="grid">
@@ -199,26 +257,12 @@ html += f"""</table>
 
 <h2>Detailed Assessment Results</h2>
 <table>
-<tr><th>Scenario</th><th>Radius (m)</th><th>Soil Model</th><th>Induced Voltage (kV)</th><th>Voltage Reduction</th><th>Risk Level</th></tr>"""
+<tr><th>Scenario</th><th>Radius (m)</th><th>Soil Model</th><th>Induced Voltage (kV)</th><th>Voltage Reduction</th><th>Risk Level</th></tr>
+{_results_table_rows(results)}
+</table>
 
-for r in results:
-    html += f"""<tr>
-<td>{r['label']}</td><td>{r['radius']}</td><td>{r['soil'].capitalize()}</td>
-<td>{r['voltage_kv']} kV</td><td>{r['reduction_pct']}% ({r['reduction_kv']} kV)</td>
-<td class="{r['risk']}">{r['risk']}</td>
-</tr>"""
+{_recommendations_section(results)}
 
-html += "<h2>Engineering Recommendations</h2>"
-seen = set()
-for r in results:
-    key = f"{r['label']}-{r['soil']}"
-    if key not in seen:
-        seen.add(key)
-        html += f"<h3>{r['label']} | {r['soil'].capitalize()} Soil | <span class='{r['risk']}'>{r['risk']}</span></h3>"
-        for rec in r["recommendations"]:
-            html += f'<div class="rec {r["risk"]}">{rec}</div>'
-
-html += f"""
 <h2>Key Research Findings</h2>
 <div class="info">
 <strong>Finding 1:</strong> Soil ionisation reduces induced voltage by 2.59% to 13.79% for horizontal soil conditions as conductor radius increases from 0.007m to 0.4082m.<br><br>
@@ -244,10 +288,29 @@ html += f"""
 </div>
 </body></html>"""
 
-filename = f"grounding_report_{now.strftime('%Y%m%d_%H%M')}.html"
-with open(filename, "w") as f:
-    f.write(html)
 
-print(f"\nReport saved: {filename}")
-print(f"Critical: {critical} | High: {high} | Moderate: {moderate} | Low: {low}")
-print("Open the HTML file in your browser to view the full report.")
+def main() -> None:
+    print("Transmission Tower Grounding Risk Assessment Tool")
+    print("Based on FYP Research - Fatehah Burhannudin, UTM 2023")
+    print("=" * 60)
+
+    results = run_assessment()
+    now = datetime.now()
+    html = build_report_html(results, now)
+
+    filename = f"grounding_report_{now.strftime('%Y%m%d_%H%M')}.html"
+    with open(filename, "w") as f:
+        f.write(html)
+
+    critical = sum(1 for r in results if r["risk"] == "CRITICAL")
+    high = sum(1 for r in results if r["risk"] == "HIGH")
+    moderate = sum(1 for r in results if r["risk"] == "MODERATE")
+    low = sum(1 for r in results if r["risk"] == "LOW")
+
+    print(f"\nReport saved: {filename}")
+    print(f"Critical: {critical} | High: {high} | Moderate: {moderate} | Low: {low}")
+    print("Open the HTML file in your browser to view the full report.")
+
+
+if __name__ == "__main__":
+    main()
